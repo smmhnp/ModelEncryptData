@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Test;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-
+use App\Http\Middleware\EncryptUserData;
 
 class TestController extends Controller
 {
@@ -25,10 +25,10 @@ class TestController extends Controller
             'password' => 'required | confirmed | min:6',
         ]);
 
-        $firstname = base64_encode(Crypt::encryptString($validated['firstname']));
-        $lastname = base64_encode(Crypt::encryptString($validated['lastname']));
-        $nickname = base64_encode(Crypt::encryptString($validated['nickname']));
-        $email = base64_encode(Crypt::encryptString($validated['email']));
+        $firstname = (Crypt::encryptString($validated['firstname']));
+        $lastname = (Crypt::encryptString($validated['lastname']));
+        $nickname = (Crypt::encryptString($validated['nickname']));
+        $email = (Crypt::encryptString($validated['email']));
 
         $user = Test::create([
             'firstname' => $firstname,
@@ -46,10 +46,10 @@ class TestController extends Controller
     {
         $user = Test::findOrFail($id);
 
-        $firstname = Crypt::decryptString(base64_decode($user->firstname));
-        $lastname = Crypt::decryptString(base64_decode($user->lastname));
-        $nickname = Crypt::decryptString(base64_decode($user->nickname));
-        $email = Crypt::decryptString(base64_decode($user->email));
+        $firstname = Crypt::decryptString(($user->firstname));
+        $lastname = Crypt::decryptString(($user->lastname));
+        $nickname = Crypt::decryptString(($user->nickname));
+        $email = Crypt::decryptString(($user->email));
 
         return view('show', [
             'firstname' => $firstname,
@@ -58,6 +58,26 @@ class TestController extends Controller
             'email'     => $email,
         ]);
     }
+    
+    
+    public function all()
+    {
+        $users = Test::all();
 
+        foreach ($users as $user){
+            $firstname = Crypt::decryptString(base64_decode($user->firstname));
+            $lastname = Crypt::decryptString(base64_decode($user->lastname));
+            $nickname = Crypt::decryptString(base64_decode($user->nickname));
+            $email = Crypt::decryptString(base64_decode($user->email));
 
+            $data[$user -> id] = [
+                'firstname' => $firstname,
+                'lastname'  => $lastname,
+                'nickname'  => $nickname,
+                'email'     => $email,
+            ];
+        }
+
+        return view('all', ['data' => $data]);
+    }
 }
